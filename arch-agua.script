@@ -4,11 +4,8 @@ for (i = 0; i <= 105; i++)
 logo_err = Image("error.png");
 logo_sprite = Sprite();
 
-
 logo_sprite.SetX(Window.GetWidth() / 2 - logo_imagen[0].GetWidth() / 2);
 logo_sprite.SetY(Window.GetHeight() / 2 - logo_imagen[0].GetHeight() / 2);
-
-#----------------------------------------- Dialogue --------------------------------
 
 status = "normal";
 switch = 0;
@@ -18,96 +15,86 @@ fun dialog_setup() {
 	local.box;
 	local.lock;
 	local.entry;
-	
+
 	box.image = Image("box.png");
 	lock.image = Image("lock.png");
 	entry.image = Image("entry.png");
-	
+
 	box.sprite = Sprite(box.image);
-	box.x = Window.GetX() + Window.GetWidth()  / 2 - box.image.GetWidth ()/2;
-	box.y = Window.GetY() + Window.GetHeight() / 1.2 - box.image.GetHeight()/2;
-	box.z = 10000;
+	box.x = Window.GetWidth() / 2 - box.image.GetWidth ()/2;
+	box.y = Window.GetHeight() / 1.2 - box.image.GetHeight()/2;
+	box.z = 100;
 	box.sprite.SetPosition(box.x, box.y, box.z);
-	
+
 	lock.sprite = Sprite(lock.image);
-	lock.x = box.x + box.image.GetWidth()/2 - (lock.image.GetWidth() + entry.image.GetWidth()) / 2 - 8;
-	lock.y = box.y + box.image.GetHeight()/2 - lock.image.GetHeight()/2;
+	lock.x = box.x + box.image.GetWidth() / 2 - (lock.image.GetWidth() + entry.image.GetWidth()) / 2 - 8;
+	lock.y = box.y + box.image.GetHeight() / 2 - lock.image.GetHeight() / 2;
 	lock.z = box.z + 1;
 	lock.sprite.SetPosition(lock.x, lock.y, lock.z);
-	
+
 	entry.sprite = Sprite(entry.image);
 	entry.x = lock.x + lock.image.GetWidth() + 16;
-	entry.y = box.y + box.image.GetHeight()/2 - entry.image.GetHeight()/2;
+	entry.y = box.y + box.image.GetHeight() / 2 - entry.image.GetHeight() / 2;
 	entry.z = box.z + 1;
 	entry.sprite.SetPosition(entry.x, entry.y, entry.z);
-	
+
 	global.dialog.box = box;
 	global.dialog.lock = lock;
 	global.dialog.entry = entry;
 	global.dialog.bullet_image = Image("bullet.png");
-	dialog_opacity(1);
 }
 
-fun dialog_opacity(opacity) {
+fun set_dialog_opacity(opacity) {
 	dialog.box.sprite.SetOpacity(opacity);
 	dialog.lock.sprite.SetOpacity(opacity);
 	dialog.entry.sprite.SetOpacity(opacity);
-	for (i = 0; dialog.bullet[i]; i++)
-		dialog.bullet[i].sprite.SetOpacity(opacity);
+	for (i = 0; dialog.bullet[i]; i++) dialog.bullet[i].sprite.SetOpacity(opacity);
 }
 
-fun display_normal_callback () {
+fun display_normal_callback() {
 	global.status = "normal";
-	if (global.dialog)
-		dialog_opacity(0);
+	if (global.dialog) set_dialog_opacity(0);
 }
 
-fun display_password_callback (prompt, bullets) {
+fun display_password_callback(prompt, bullets) {
 	global.status = "password";
 	if (!global.dialog) dialog_setup();
-	else dialog_opacity(1);
-	for (i = 0; dialog.bullet[i] || i < bullets; i++)
-		{
-			if (!dialog.bullet[i]) {
-				dialog.bullet[i].sprite = Sprite(dialog.bullet_image);
-				dialog.bullet[i].x = dialog.entry.x + i * dialog.bullet_image.GetWidth();
-				dialog.bullet[i].y = dialog.entry.y + dialog.entry.image.GetHeight() / 2 - dialog.bullet_image.GetHeight() / 2;
-				dialog.bullet[i].z = dialog.entry.z + 1;
-				dialog.bullet[i].sprite.SetPosition(dialog.bullet[i].x, dialog.bullet[i].y, dialog.bullet[i].z);
-			}
-			if (i < bullets)
-				dialog.bullet[i].sprite.SetOpacity(1);
-			else
-				dialog.bullet[i].sprite.SetOpacity(0);
+	set_dialog_opacity(1);
+	for (i = 0; dialog.bullet[i] || i < bullets; i++) {
+		if (!dialog.bullet[i]) {
+			dialog.bullet[i].sprite = Sprite(dialog.bullet_image);
+			dialog.bullet[i].x = dialog.entry.x + i * dialog.bullet_image.GetWidth() + 6;
+			if (dialog.bullet[i].x > dialog.entry.x + dialog.entry.image.GetWidth()) break;
+			dialog.bullet[i].y = dialog.entry.y + dialog.entry.image.GetHeight() / 2 - dialog.bullet_image.GetHeight() / 2;
+			dialog.bullet[i].z = dialog.entry.z + 1;
+			dialog.bullet[i].sprite.SetPosition(dialog.bullet[i].x, dialog.bullet[i].y, dialog.bullet[i].z);
 		}
+		if (i < bullets) dialog.bullet[i].sprite.SetOpacity(1);
+		else dialog.bullet[i].sprite.SetOpacity(0);
+	}
 }
-
-Plymouth.SetDisplayNormalFunction(display_normal_callback);
-Plymouth.SetDisplayPasswordFunction(display_password_callback);
 
 fun boot_callback() {
 	logo_sprite.SetImage(logo_imagen[img]);
 	if (img < 105 && global.status == "normal") {
 		img++;
-		if (global.switch == 1)
-			global.error = 1;
+		if (global.switch == 1) global.error = 1;
 	}
 	if (global.status == "password") {
-		img = 0;
 		global.switch = 1;
-		if (error == 1)
-			logo_sprite.SetImage(logo_err);
+		if (error == 1) logo_sprite.SetImage(logo_err);
 	}
 }
 
 fun poweroff_callback() {
 	logo_sprite.SetImage(logo_imagen[img]);
-	if (img > 0)
-		img--;
+	if (img > 0) img--;
 }
 
 if (Plymouth.GetMode() == "boot") {
 	img = 0;
+	Plymouth.SetDisplayNormalFunction(display_normal_callback);
+	Plymouth.SetDisplayPasswordFunction(display_password_callback);
 	Plymouth.SetRefreshFunction(boot_callback);
 }
 else {
